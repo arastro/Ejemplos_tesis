@@ -40,11 +40,11 @@ public class AdaptadorSitio extends ArrayAdapter<Sitio> {
 
         TextView precio = (TextView)listItemView.findViewById(R.id.precio_comida);
 
-        precio.setText((String.valueOf(sitioActual.getRating())));
+        precio.setText((String.valueOf(sitioActual.getId())));
 
         ImageView imagen = (ImageView)listItemView.findViewById(R.id.miniatura_comida);
 
-        imagen.setImageResource(sitioActual.getIdDrawable());
+        imagen.setImageBitmap(sitioActual.getImg());
 
         return listItemView;
     }

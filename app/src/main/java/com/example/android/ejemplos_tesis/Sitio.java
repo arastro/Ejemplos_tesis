@@ -1,5 +1,7 @@
 package com.example.android.ejemplos_tesis;
 
+import android.graphics.Bitmap;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,14 +10,14 @@ import java.util.List;
  */
 
 public class Sitio {
-    private float rating;
+    private int id ;
     private String nombre;
-    private int idDrawable;
+    private Bitmap img;
 
-    public Sitio(float rating, String nombre, int idDrawable) {
-        this.rating = rating;
+    public Sitio(int id, String nombre, Bitmap img) {
+        this.id = id;
         this.nombre = nombre;
-        this.idDrawable = idDrawable;
+        this.img = img;
     }
 
     /*public static final List<Sitio> COMIDAS_POPULARES = new ArrayList<Sitio>();
@@ -54,11 +56,11 @@ public class Sitio {
         return nombre;
     }
 
-    public float getRating() {
-        return rating;
+    public float getId() {
+        return id;
     }
 
-    public int getIdDrawable() {
-        return idDrawable;
+    public Bitmap getImg() {
+        return img;
     }
 }
