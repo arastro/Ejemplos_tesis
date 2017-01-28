@@ -1,12 +1,16 @@
 package com.example.android.ejemplos_tesis;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -22,10 +26,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static android.R.attr.id;
+import static com.example.android.ejemplos_tesis.R.layout.actividad_detalle_sitios;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final String URL="http://ceramicapiga.com/tesis/get5sites.php";
     private ArrayList<Sitio> sitios = new ArrayList<Sitio>();
+    private ArrayList<Integer> idSitios = new ArrayList<>();
 
 
     @Override
@@ -47,6 +55,18 @@ public class MainActivity extends AppCompatActivity {
         ListView lista = (ListView)findViewById(R.id.reciclador);
 
         lista.setAdapter(adapter); */
+
+        ListView lista = (ListView) findViewById(R.id.reciclador);
+
+        lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+
+                Intent intent =new Intent(getApplicationContext(), PlaceDetailActivity.class);
+                intent.putExtra("id",idSitios.get(position));
+                startActivity(intent);
+            }
+        });
 
 
     }
@@ -88,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
                     String name = sitioJson.getString("nombre");
                     imagen = descargarImagen(sitioJson.getString("ulr"));
                     sitios.add(new Sitio(id, name, imagen));
+                    idSitios.add(id);
 
                 }
             } catch (JSONException e) {
