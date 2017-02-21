@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="8dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:background="#9E9E9E">
+
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/android_perfil"
+                android:layout_marginLeft="8dp"
+                android:scaleType="fitXY"
+                android:id="@+id/imagen"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/imagen"
+                android:text="india"
+                android:layout_marginLeft="20dp"
+                android:gravity="center"
+                android:layout_centerVertical="true"
+                android:textSize="15dp"
+                android:textStyle="bold"
+                android:id="@+id/nombre"
+                android:textColor="#000000"/>
+
+        </RelativeLayout>
+
+</LinearLayout>

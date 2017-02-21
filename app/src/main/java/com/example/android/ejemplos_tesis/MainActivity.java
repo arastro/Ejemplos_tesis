@@ -1,152 +1,88 @@
 package com.example.android.ejemplos_tesis;
 
-import android.app.ProgressDialog;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
-import android.os.AsyncTask;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ListView;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
-import static android.R.attr.id;
-import static com.example.android.ejemplos_tesis.R.layout.actividad_detalle_sitios;
+/*Ejemplo sencillo de un SearchView pero sin autocompletado(Aun)*/
 
-public class MainActivity extends AppCompatActivity {
 
-    public static final String URL="http://ceramicapiga.com/tesis/get5sites.php";
-    private ArrayList<Sitio> sitios = new ArrayList<Sitio>();
-    private ArrayList<Integer> idSitios = new ArrayList<>();
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
+    // Creamos las variables de manera gloval ya que las usaremos en otros metodos*/
+    ArrayList<Ciudad> ciudades =new ArrayList<>();
+    Toolbar toolbar;
+    ListView lista;
+    AdapterCiudad adapter;//adaptador para el arraylist de ciudades
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //Inicializamos el toolbar donde se agregara el searchView
+        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        //Agregamos valores al arrayList de ciudades o sitios
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"colombia"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"ecuador"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"bolivia"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"india"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"2"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"3"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"4"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"5"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"6"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"7"));
+        ciudades.add(new Ciudad(R.drawable.android_perfil,"8"));
 
 
-        GetFromUrl tsk = new GetFromUrl();
-        tsk.execute();
-
-        // sitios.add(new Sitio(5, "Camarones Tismados", R.drawable.background));
-
-
-
-       /* AdaptadorSitio adapter = new AdaptadorSitio(this, sitios);
-
-        ListView lista = (ListView)findViewById(R.id.reciclador);
-
-        lista.setAdapter(adapter); */
-
-        ListView lista = (ListView) findViewById(R.id.reciclador);
-
-        lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-
-                Intent intent =new Intent(getApplicationContext(), PlaceDetailActivity.class);
-                intent.putExtra("id",idSitios.get(position));
-                startActivity(intent);
-            }
-        });
-
+        adapter = new AdapterCiudad(this, ciudades);//Inicializamos el adaptador de ciudades con el contexto y el arraylist de ciudades
+        lista = (ListView)findViewById(R.id.reciclador);//buscamos el adaptador de ciudades en el xml
+        lista.setAdapter(adapter);//agregamos el adaptador al listview
 
     }
 
-    private class GetFromUrl extends AsyncTask<Void, Void ,Void>{
+    //funcion para inicializar el toolbar y el searchview
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
 
-        private ProgressDialog pDialog;
-
-        JSONObject json = new JSONObject();
-        JSONParser jsonParser = new JSONParser();
-
-        @Override
-        protected void onPreExecute() {
-            // TODO Auto-generated method stub
-            super.onPreExecute();
-
-            pDialog = new ProgressDialog(MainActivity.this);
-            pDialog.setMessage("Cargando Imagen");
-            pDialog.setCancelable(true);
-            pDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            pDialog.show();
-        }
-
-        @Override
-        protected Void doInBackground(Void... param) {
-            Bitmap imagen=null;
-            HashMap<String, String> params = new HashMap<>();
-            params.put("user", "user");
-
-            Log.i("Tag", "llego Aqui");
-
-            json = jsonParser.makeHttpRequest(URL, "POST", params);
-            try {
-                JSONArray values = json.getJSONArray("sitios");
-
-                for (int i=0; i<values.length(); i++){
-                    JSONObject sitioJson = values.getJSONObject(i);
-                    int id = sitioJson.getInt("id");
-                    String name = sitioJson.getString("nombre");
-                    imagen = descargarImagen(sitioJson.getString("ulr"));
-                    sitios.add(new Sitio(id, name, imagen));
-                    idSitios.add(id);
-
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-
-
-                AdaptadorSitio adapter = new AdaptadorSitio(MainActivity.this, sitios);
-
-                ListView lista = (ListView)findViewById(R.id.reciclador);
-
-                lista.setAdapter(adapter);
-            pDialog.dismiss();
-
-        }
-
-        private Bitmap descargarImagen (String imageHttpAddress){
-            URL imageUrl = null;
-            Bitmap imagen = null;
-            try{
-                imageUrl = new URL(imageHttpAddress);
-                HttpURLConnection conn = (HttpURLConnection) imageUrl.openConnection();
-                conn.connect();
-                imagen = BitmapFactory.decodeStream(conn.getInputStream());
-            }catch(IOException ex){
-                ex.printStackTrace();
-            }
-
-            return imagen;
-        }
+        getMenuInflater().inflate(R.menu.menu_item,menu);
+        MenuItem menuItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(menuItem);
+        searchView.setOnQueryTextListener(this);
+        return true;
     }
 
+    //Las 2 ultimas funciones se agregan por defecto al implementar el Searchview al archivo java
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
 
+    //modificamos esta funcion para que cada vez que la persona escriba en el Searchview se vaya modificando la lista
+    @Override
+    public boolean onQueryTextChange(String newText) {
 
+        newText = newText.toLowerCase();
+        ArrayList<Ciudad> nuevalista = new ArrayList<>();
+        for (Ciudad ciudad : ciudades){
+            String nombre = ciudad.getNombre().toLowerCase();
+            if (nombre.contains(newText)){
+                nuevalista.add(ciudad);
+            }
+        }
+
+        adapter = new AdapterCiudad(this, nuevalista);
+        lista.setAdapter(adapter);
+
+        return false;
+    }
 }
