@@ -1,25 +1,44 @@
 package com.example.android.ejemplos_tesis;
 
+import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /*Ejemplo sencillo de un SearchView pero sin autocompletado(Aun)*/
 
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
+
+
+    public static final String URL="http://ceramicapiga.com/tesis/searchSite.php";
     // Creamos las variables de manera gloval ya que las usaremos en otros metodos*/
-    ArrayList<Ciudad> ciudades =new ArrayList<>();
+    ArrayList<Sitio> ciudades =new ArrayList<>();
+    ArrayList<Sitio> listaSitios = new ArrayList<>();
+    GetFromUrl Tbuscar =new GetFromUrl();// hilo que se encargara de buscar
+
     Toolbar toolbar;
     ListView lista;
     AdapterCiudad adapter;//adaptador para el arraylist de ciudades
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,22 +48,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         //Inicializamos el toolbar donde se agregara el searchView
         toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        //Agregamos valores al arrayList de ciudades o sitios
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"colombia"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"ecuador"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"bolivia"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"india"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"2"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"3"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"4"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"5"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"6"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"7"));
-        ciudades.add(new Ciudad(R.drawable.android_perfil,"8"));
-
-
-        adapter = new AdapterCiudad(this, ciudades);//Inicializamos el adaptador de ciudades con el contexto y el arraylist de ciudades
         lista = (ListView)findViewById(R.id.reciclador);//buscamos el adaptador de ciudades en el xml
         lista.setAdapter(adapter);//agregamos el adaptador al listview
 
@@ -71,18 +74,73 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @Override
     public boolean onQueryTextChange(String newText) {
 
-        newText = newText.toLowerCase();
-        ArrayList<Ciudad> nuevalista = new ArrayList<>();
-        for (Ciudad ciudad : ciudades){
-            String nombre = ciudad.getNombre().toLowerCase();
-            if (nombre.contains(newText)){
-                nuevalista.add(ciudad);
-            }
+        if(newText.length()>= 3) {
+            newText = newText.toLowerCase();
+            Tbuscar.execute(newText);
+
         }
-
-        adapter = new AdapterCiudad(this, nuevalista);
-        lista.setAdapter(adapter);
-
         return false;
     }
+
+    private class GetFromUrl extends AsyncTask<String, Void, Void> {
+
+        private ProgressDialog pDialog;
+
+        JSONObject json = new JSONObject();
+        JSONParser jsonParser = new JSONParser();
+
+        @Override
+        protected void onPreExecute() {
+            // TODO Auto-generated method stub
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected Void doInBackground(String ...nameSite) {
+
+
+            HashMap<String, String> params = new HashMap<>();
+            params.put("name", nameSite[0]);
+
+            Log.i("Tag", "llego Aqui");
+
+            json = jsonParser.makeHttpRequest(URL, "POST", params);
+            try {
+
+                JSONArray values = json.getJSONArray("sitios");
+
+                listaSitios = new ArrayList<>();
+                for(int i=0; i<values.length(); i++){
+
+                    JSONObject sitioJson = values.getJSONObject(i);
+                    int id = sitioJson.getInt("id");
+                    String name = sitioJson.getString("nombre");
+                    Sitio sitio = new Sitio(R.drawable.android_perfil, name);
+                    listaSitios.add(sitio);
+                    adapter = new AdapterCiudad(MainActivity.this, listaSitios);
+
+
+
+
+                }
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+
+            lista.setAdapter(adapter);
+            super.onPostExecute(aVoid);
+
+
+
+        }
+    }
 }
+

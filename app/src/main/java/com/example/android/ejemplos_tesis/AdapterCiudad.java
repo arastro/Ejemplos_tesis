@@ -17,13 +17,13 @@ import java.util.ArrayList;
 
 //Adaptador de ciudades (lo normal)
 
-public class AdapterCiudad extends ArrayAdapter<Ciudad> {
+public class AdapterCiudad extends ArrayAdapter<Sitio> {
 
     ArrayList arrayList;
 
     //se agrega el constructor
-    public AdapterCiudad(Context context, ArrayList<Ciudad> ciudad) {
-        super(context, 0, ciudad);
+    public AdapterCiudad(Context context, ArrayList<Sitio> sitio) {
+        super(context, 0, sitio);
     }
 
 
@@ -40,16 +40,16 @@ public class AdapterCiudad extends ArrayAdapter<Ciudad> {
         }//este if se  agrega por si la lista esta vacia(es solo validacion)
 
 
-        Ciudad ciudadActual = getItem(position);//capturamos la ciudad actual y la guardamos en un objeto
+        Sitio sitioActual = getItem(position);//capturamos la ciudad actual y la guardamos en un objeto
 
         //seguidamente agregamos la informacion para que lo muestre el xml
         TextView nombre = (TextView) listItemView.findViewById(R.id.nombre);
 
-        nombre.setText(ciudadActual.getNombre());
+        nombre.setText(sitioActual.getNombre());
 
         ImageView imagen = (ImageView) listItemView.findViewById(R.id.imagen);
 
-        imagen.setImageResource(ciudadActual.getBandera());
+        imagen.setImageResource(sitioActual.getId());
 
         //devolvemos la lista ya modificada
         return listItemView;
