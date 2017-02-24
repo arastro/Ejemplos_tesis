@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         if(newText.length()>= 3) {
             newText = newText.toLowerCase();
+            GetFromUrl Tbuscar =new GetFromUrl();// hilo que se encargara de buscar
             Tbuscar.execute(newText);
 
         }
@@ -111,33 +113,41 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 JSONArray values = json.getJSONArray("sitios");
 
                 listaSitios = new ArrayList<>();
-                for(int i=0; i<values.length(); i++){
-
-                    JSONObject sitioJson = values.getJSONObject(i);
-                    int id = sitioJson.getInt("id");
-                    String name = sitioJson.getString("nombre");
-                    Sitio sitio = new Sitio(R.drawable.android_perfil, name);
-                    listaSitios.add(sitio);
-                    adapter = new AdapterCiudad(MainActivity.this, listaSitios);
 
 
+                    int i = 0;
+                    while (i < values.length()) {
+                        JSONObject sitioJson = values.getJSONObject(i);
+                        int id = sitioJson.getInt("id");
+                        String name = sitioJson.getString("nombre");
+                        Sitio sitio = new Sitio(R.drawable.android_perfil, name);
+                        listaSitios.add(sitio);
+                        adapter = new AdapterCiudad(MainActivity.this, listaSitios);
+                        i++;
+                    }
 
 
-                }
+
+
 
 
             } catch (JSONException e) {
-                e.printStackTrace();
+                this.cancel(true);
             }
             return null;
         }
 
         @Override
+        protected void onCancelled() {
+            super.onCancelled();
+        }
+
+        @Override
         protected void onPostExecute(Void aVoid) {
 
-            lista.setAdapter(adapter);
-            super.onPostExecute(aVoid);
 
+            super.onPostExecute(aVoid);
+            lista.setAdapter(adapter);
 
 
         }
