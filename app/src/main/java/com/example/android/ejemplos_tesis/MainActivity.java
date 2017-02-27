@@ -1,44 +1,47 @@
 package com.example.android.ejemplos_tesis;
 
+
 import android.app.ProgressDialog;
-import android.graphics.Bitmap;
+import android.app.SearchManager;
+import android.content.Context;
+import android.content.Intent;
+import android.database.MatrixCursor;
 import android.os.AsyncTask;
-import android.support.v4.view.MenuItemCompat;
+import android.provider.BaseColumns;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
+import android.support.v4.widget.CursorAdapter;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.widget.Toast;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/*Ejemplo sencillo de un SearchView pero sin autocompletado(Aun)*/
+import android.database.Cursor;
 
+public class MainActivity extends AppCompatActivity {
 
-public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
-
-
-
+    // CONNECTION_TIMEOUT and READ_TIMEOUT are in milliseconds
+    public static final int CONNECTION_TIMEOUT = 10000;
+    public static final int READ_TIMEOUT = 15000;
+    private SimpleCursorAdapter myAdapter;
     public static final String URL="http://ceramicapiga.com/tesis/searchSite.php";
-    // Creamos las variables de manera gloval ya que las usaremos en otros metodos*/
-    ArrayList<Sitio> ciudades =new ArrayList<>();
-    ArrayList<Sitio> listaSitios = new ArrayList<>();
-    GetFromUrl Tbuscar =new GetFromUrl();// hilo que se encargara de buscar
 
-    Toolbar toolbar;
-    ListView lista;
-    AdapterCiudad adapter;//adaptador para el arraylist de ciudades
+    SearchView searchView = null;
+    private String[] strArrData = {"No Suggestions"};
 
 
     @Override
@@ -46,111 +49,194 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Inicializamos el toolbar donde se agregara el searchView
-        toolbar = (Toolbar)findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        lista = (ListView)findViewById(R.id.reciclador);//buscamos el adaptador de ciudades en el xml
-        lista.setAdapter(adapter);//agregamos el adaptador al listview
+        final String[] from = new String[] {"fishName"};
+        final int[] to = new int[] {android.R.id.text1};
 
+        // setup SimpleCursorAdapter
+        myAdapter = new SimpleCursorAdapter(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, null, from, to, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+
+        // Fetch data from mysql table using AsyncTask
+        // new AsyncFetch().execute();
     }
 
-    //funcion para inicializar el toolbar y el searchview
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-        getMenuInflater().inflate(R.menu.menu_item,menu);
-        MenuItem menuItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) MenuItemCompat.getActionView(menuItem);
-        searchView.setOnQueryTextListener(this);
+        // adds item to action bar
+        getMenuInflater().inflate(R.menu.search_main, menu);
+
+        // Get Search item from action bar and Get Search service
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchManager searchManager = (SearchManager) MainActivity.this.getSystemService(Context.SEARCH_SERVICE);
+        if (searchItem != null) {
+            searchView = (SearchView) searchItem.getActionView();
+        }
+        if (searchView != null) {
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(MainActivity.this.getComponentName()));
+            searchView.setIconified(false);
+            searchView.setSuggestionsAdapter(myAdapter);
+            // Getting selected (clicked) item suggestion
+            searchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+                @Override
+                public boolean onSuggestionClick(int position) {
+
+                    // Add clicked text to search box
+                    CursorAdapter ca = searchView.getSuggestionsAdapter();
+                    Cursor cursor = ca.getCursor();
+                    cursor.moveToPosition(position);
+                    searchView.setQuery(cursor.getString(cursor.getColumnIndex("fishName")),false);
+                    return true;
+                }
+
+                @Override
+                public boolean onSuggestionSelect(int position) {
+                    return true;
+                }
+            });
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String s) {
+                    return false;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String s) {
+
+                        AsyncFetch asyncFetch = new AsyncFetch();
+                        asyncFetch.execute(s);
+
+
+                    return false;
+                }
+            });
+        }
+
         return true;
     }
 
-    //Las 2 ultimas funciones se agregan por defecto al implementar el Searchview al archivo java
     @Override
-    public boolean onQueryTextSubmit(String query) {
-        return false;
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        return super.onOptionsItemSelected(item);
     }
 
-    //modificamos esta funcion para que cada vez que la persona escriba en el Searchview se vaya modificando la lista
-    @Override
-    public boolean onQueryTextChange(String newText) {
 
-        if(newText.length()>= 3) {
-            newText = newText.toLowerCase();
-            GetFromUrl Tbuscar =new GetFromUrl();// hilo que se encargara de buscar
-            Tbuscar.execute(newText);
+    // Every time when you press search button on keypad an Activity is recreated which in turn calls this function
+    @Override
+    protected void onNewIntent(Intent intent) {
+
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            String query = intent.getStringExtra(SearchManager.QUERY);
+            if (searchView != null) {
+                searchView.clearFocus();
+            }
+
+            // User entered text and pressed search button. Perform task ex: fetching data from database and display
 
         }
-        return false;
     }
 
-    private class GetFromUrl extends AsyncTask<String, Void, Void> {
+    // Create class AsyncFetch
+    private class AsyncFetch extends AsyncTask<String, String, String> {
 
-        private ProgressDialog pDialog;
+        private ProgressDialog pDialog = new ProgressDialog(MainActivity.this);;
 
         JSONObject json = new JSONObject();
         JSONParser jsonParser = new JSONParser();
 
+
         @Override
         protected void onPreExecute() {
-            // TODO Auto-generated method stub
             super.onPreExecute();
+
+            //this method will be running on UI thread
+            pDialog.setMessage("\tLoading...");
+            pDialog.setCancelable(false);
+            // pDialog.show();
 
         }
 
         @Override
-        protected Void doInBackground(String ...nameSite) {
-
+        protected String doInBackground(String... nameSite) {
 
             HashMap<String, String> params = new HashMap<>();
             params.put("name", nameSite[0]);
 
             Log.i("Tag", "llego Aqui");
 
+            ArrayList<String> listaSitios = new ArrayList<>();
+
             json = jsonParser.makeHttpRequest(URL, "POST", params);
+
             try {
 
                 JSONArray values = json.getJSONArray("sitios");
 
-                listaSitios = new ArrayList<>();
 
+                int i = 0;
+                while (i < values.length()) {
+                    JSONObject sitioJson = values.getJSONObject(i);
+                    int id = sitioJson.getInt("id");
+                    String name = sitioJson.getString("nombre");
+                    listaSitios.add(name);
 
-                    int i = 0;
-                    while (i < values.length()) {
-                        JSONObject sitioJson = values.getJSONObject(i);
-                        int id = sitioJson.getInt("id");
-                        String name = sitioJson.getString("nombre");
-                        Sitio sitio = new Sitio(R.drawable.android_perfil, name);
-                        listaSitios.add(sitio);
-                        adapter = new AdapterCiudad(MainActivity.this, listaSitios);
-                        i++;
-                    }
+                    i++;
+                }
 
-
-
-
+                strArrData = listaSitios.toArray(new String[listaSitios.size()]);
 
 
             } catch (JSONException e) {
-                this.cancel(true);
+                strArrData = listaSitios.toArray(new String[listaSitios.size()]);
+
             }
-            return null;
+
+            return nameSite[0];
         }
 
         @Override
-        protected void onCancelled() {
-            super.onCancelled();
-        }
+        protected void onPostExecute(String result) {
 
-        @Override
-        protected void onPostExecute(Void aVoid) {
+            //this method will be running on UI thread
+            // pDialog.dismiss();
+        /*    if(result.equals("no rows")) {
+
+                // Do some action if no data from database
+
+            }else{
+
+                try {
+
+                    JSONArray jArray = new JSONArray(result);
+
+                    // Extract data from json and store into ArrayList
+                    for (int i = 0; i < jArray.length(); i++) {
+                        JSONObject json_data = jArray.getJSONObject(i);
+                        dataList.add(json_data.getString("fish_name"));
+                    }
+
+                    strArrData = dataList.toArray(new String[dataList.size()]);
+
+                } catch (JSONException e) {
+                    // You to understand what actually error is and handle it appropriately
+                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, result.toString(), Toast.LENGTH_LONG).show();
+                }
+
+            } */
 
 
-            super.onPostExecute(aVoid);
-            lista.setAdapter(adapter);
+            // Filter data
+            final MatrixCursor mc = new MatrixCursor(new String[]{BaseColumns._ID, "fishName"});
+            for (int i = 0; i < strArrData.length; i++) {
+                if (strArrData[i].toLowerCase().startsWith(result.toLowerCase()))
+                    mc.addRow(new Object[]{i, strArrData[i]});
 
 
+            }
+
+            myAdapter.changeCursor(mc);
+            searchView.setSuggestionsAdapter(myAdapter);
         }
     }
 }
-
